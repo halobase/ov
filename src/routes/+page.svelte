@@ -13,6 +13,14 @@
   let loader: OBJLoader;
   let loading = false;
   let error = "";
+  let full = false;
+
+  let text = `横纵径：1.9*1.4cm
+总糖含量：12.2%
+维 C 含量：10.1%
+酸度：0.87%
+可溶性固形物含量：13.8%
+花青素含量：161mg/100g`
 
   function render() {
     renderer.render(scene, camera);
@@ -21,7 +29,7 @@
   onMount(() => {
     loader = new OBJLoader();
     scene = new three.Scene();
-    scene.background = new three.Color(0x03adfc);
+    scene.background = new three.Color(0x2e2e2e);
     camera = new three.PerspectiveCamera();
 
     renderer = new three.WebGLRenderer({ antialias: true });
@@ -31,12 +39,13 @@
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 0.15;
-    controls.maxDistance = 5;
+    controls.maxDistance = 30;
     controls.addEventListener("change", render);
 
     window.addEventListener("resize", () => {
       camera.updateProjectionMatrix();
       renderer.setSize(el.scrollWidth, el.scrollHeight);
+      renderer.render(scene, camera);
     });
   });
 
@@ -55,7 +64,7 @@
       function (obj) {
         loading = false;
         scene.add(obj);
-        requestAnimationFrame(render);
+        renderer.render(scene, camera);
       },
       (event) => {},
       (err) => (error = (err as Error).message),
@@ -77,15 +86,14 @@
 </svelte:head>
 
 <div class="flex flex-col sm:flex-row gap-4 p-4 h-screen">
-  <header class="flex gap-4 flex-col sm:w-64">
+  <header class="flex gap-4 flex-col sm:w-72" class:hidden={full}>
     <div>
       <h2 class="text-2xl font-semibold mb-2">🌐 三维重建可视化</h2>
-      <p>
-        Lorem ipsum dolor sit, amet consectetur adipisicing elit. Sequi
-        consequuntur voluptas reiciendis placeat error possimus fugiat aut
-        adipisci, odit commodi iure debitis iste distinctio aliquid temporibus,
-        nihil minima corporis enim.
-      </p>
+      <textarea
+        class="w-full h-64 p-4 outline-none"
+        placeholder="输入描述"
+        bind:value={text}
+      />
     </div>
     <label class="btn btn-info">
       <input
@@ -96,10 +104,36 @@
       />
       选择 .obj 文件
     </label>
+    <button
+      class="btn"
+      type="button"
+      on:click={() => {
+        full = true;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.render(scene, camera);
+      }}
+    >
+      全屏
+    </button>
   </header>
   <main class="relative grow rounded-md overflow-hidden" bind:this={el}>
     {#if loading}
       <Notify {loading} {error} />
     {/if}
+    <div class="absolute top-4 right-4" class:hidden={!full}>
+      <button
+        class="btn btn-circle"
+        type="button"
+        on:click={() => {
+          full = false;
+        }}
+      >
+        返回
+      </button>
+    </div>
+    <div class="absolute top-4 left-4 text-white">
+      <pre class="text-2xl"><code>{text}</code></pre>
+    </div>
   </main>
 </div>
